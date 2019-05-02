@@ -1,6 +1,6 @@
 package com.bigbasti.model;
 
-public enum Proxy {
+public enum ProxySelection {
     DEFAULT,
     SYSTEM,
     MAVEN

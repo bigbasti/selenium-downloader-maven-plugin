@@ -1,6 +1,6 @@
 package com.bigbasti.network;
 
-import com.bigbasti.model.Proxy;
+import com.bigbasti.model.ProxySelection;
 import org.apache.log4j.Logger;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
@@ -13,56 +13,64 @@ import java.util.List;
 public class ProxyConfiguration {
     private final Logger LOG = Logger.getLogger(this.getClass());
 
-    private Proxy proxySetting;
+    private ProxySelection proxySelectionSetting;
     private String proxyHost;
-    private String proxyPort;
-    private String nonProxyHosts;
+    private Integer proxyPort;
+    private String proxyProtocol;
+    private String nonProxyHosts = "";
+    private String proxyUsername = "";
+    private String proxyPassword = "";
+    private String proxyName = "no proxy";
     private boolean isProxyConfigredSuccessful;
 
     /**
      * Create the proxy configuration class based on the configured proxy
-     * @param proxySetting the type of proxy to setup
+     * @param proxySelectionSetting the type of proxy to setup
      */
-    public ProxyConfiguration(Proxy proxySetting, MavenSession mavenSession, SettingsDecrypter decrypter) {
-        this.proxySetting = proxySetting;
+    public ProxyConfiguration(ProxySelection proxySelectionSetting, MavenSession mavenSession, SettingsDecrypter decrypter) {
+        this.proxySelectionSetting = proxySelectionSetting;
 
-        if (proxySetting == Proxy.MAVEN) {
+        if (proxySelectionSetting == ProxySelection.MAVEN) {
             // try reading the proxy configuration from the maven settings.xml
             if (mavenSession == null ||
                     mavenSession.getSettings() == null ||
                     mavenSession.getSettings().getProxies() == null ||
                     mavenSession.getSettings().getProxies().isEmpty()) {
+                LOG.info("could not find a maven proxy - please make sure you are using the right maven config");
                 // fallback to DEFAULT
             } else {
                 final List<org.apache.maven.settings.Proxy> mavenProxies = mavenSession.getSettings().getProxies();
-
                 final List<org.apache.maven.settings.Proxy> proxies = new ArrayList<org.apache.maven.settings.Proxy>(mavenProxies.size());
 
+                // loop through found maven proxies and select the first active one
                 for (org.apache.maven.settings.Proxy mavenProxy : mavenProxies) {
                     if (mavenProxy.isActive()) {
                         mavenProxy = decryptProxy(mavenProxy, decrypter);
-                        proxies.add(new ProxyConfig.Proxy(mavenProxy.getId(), mavenProxy.getProtocol(), mavenProxy.getHost(),
-                                mavenProxy.getPort(), mavenProxy.getUsername(), mavenProxy.getPassword(), mavenProxy.getNonProxyHosts()));
+                        proxyHost = mavenProxy.getHost();
+                        proxyPort = mavenProxy.getPort();
+                        proxyProtocol = mavenProxy.getProtocol();
+                        proxyName = mavenProxy.getId();
+                        proxyUsername = mavenProxy.getUsername();
+                        proxyPassword = mavenProxy.getPassword();
+                        nonProxyHosts = mavenProxy.getNonProxyHosts();
+
+                        LOG.info("Using proxy " + proxyName + " from maven: " + proxyHost + ":" + proxyPort);
+                        isProxyConfigredSuccessful = true;
+                        return;
                     }
                 }
-
-                LOG.info("Found proxies: {}", proxies);
-                return new ProxyConfig(proxies);
             }
-        } else if (proxySetting == Proxy.SYSTEM){
-
+        } else if (proxySelectionSetting == ProxySelection.SYSTEM){
+            // try reading the proxy configuration from the system environment
         }
 
-        // either the configured proxy is Proxy.DEFAULT or the desired config could not be found
+        LOG.info("defaulting to 'no proxy' configuration");
+        // either the configured proxy is ProxySelection.DEFAULT or the desired config could not be found
         isProxyConfigredSuccessful = false;
     }
 
     public boolean isProxyConfigured(){
         return isProxyConfigredSuccessful;
-    }
-
-    public Proxy getProxy(){
-        return null;
     }
 
     private org.apache.maven.settings.Proxy decryptProxy(org.apache.maven.settings.Proxy proxy, SettingsDecrypter decrypter) {
