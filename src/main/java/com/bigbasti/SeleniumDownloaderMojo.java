@@ -103,49 +103,15 @@ public class SeleniumDownloaderMojo extends AbstractMojo
     @Parameter(defaultValue = "10000")
     protected int downloadConnectTimeout;
 
-    /**
-     * Location of the file.
-     * @parameter expression="${project.build.directory}"
-     * @required
-     */
-    private File outputDirectory;
 
-    public void execute()
-        throws MojoExecutionException
+    public void execute() throws MojoExecutionException
     {
-        File f = outputDirectory;
+        // check access rights to the configured directories
 
-        if ( !f.exists() )
-        {
-            f.mkdirs();
-        }
+        // check configuration
 
-        File touch = new File( f, "touch.txt" );
+        // try download the files
 
-        FileWriter w = null;
-        try
-        {
-            w = new FileWriter( touch );
 
-            w.write( "touch.txt" );
-        }
-        catch ( IOException e )
-        {
-            throw new MojoExecutionException( "Error creating file " + touch, e );
-        }
-        finally
-        {
-            if ( w != null )
-            {
-                try
-                {
-                    w.close();
-                }
-                catch ( IOException e )
-                {
-                    // ignore
-                }
-            }
-        }
     }
 }
