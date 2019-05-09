@@ -1,6 +1,8 @@
 package com.bigbasti;
 
 import com.bigbasti.model.FileDownload;
+import com.google.common.base.Strings;
+import org.apache.log4j.Logger;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -15,8 +17,8 @@ import java.io.IOException;
 import java.util.List;
 
 @Mojo(name = "selenium", defaultPhase = LifecyclePhase.TEST_COMPILE)
-public class SeleniumDownloaderMojo extends AbstractMojo
-{
+public class SeleniumDownloaderMojo extends AbstractMojo {
+    private final Logger LOG = Logger.getLogger(this.getClass());
 
     @Component
     protected MojoExecution execution;
@@ -106,12 +108,28 @@ public class SeleniumDownloaderMojo extends AbstractMojo
 
     public void execute() throws MojoExecutionException
     {
-        // check access rights to the configured directories
-
         // check configuration
+        if (checkDownloadConfigurations()) {
+
+        }
 
         // try download the files
 
 
+    }
+
+    private boolean checkDownloadConfigurations(){
+        if (downloads != null && downloads.size() > 0) {
+            for (FileDownload fd : downloads){
+                if (!fd.isValid()){
+                    LOG.error("the download configuration for " + fd.getDriver() + " - " + fd.getVersion() + " - " + fd.getArchitecture() + " is invalid!");
+                    return false;
+                }
+            }
+        } else {
+            LOG.error("no valid download configuration found!");
+            return false;
+        }
+        return true;
     }
 }

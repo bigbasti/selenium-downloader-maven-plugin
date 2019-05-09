@@ -1,5 +1,7 @@
 package com.bigbasti.model;
 
+import com.google.common.base.Strings;
+
 public class FileDownload {
     private OS os;
     private Browser driver;
@@ -73,6 +75,25 @@ public class FileDownload {
 
     public void setAlgorithm(Algorithm algorithm) {
         this.algorithm = algorithm;
+    }
+
+    public boolean isValid() {
+        if (this.os == null) { return false; }
+        if (this.driver == null) { return false; }
+        if (this.architecture == null) { return false; }
+        if (Strings.isNullOrEmpty(this.version)) { return false; }
+        if (Strings.isNullOrEmpty(this.url)) { return false; }
+
+        // check if hash was provided, if yes, the algorithm must be set too
+        if(!Strings.isNullOrEmpty(this.getHash())){
+            if(this.getAlgorithm() == null){
+                return false;
+            } else {
+                // TODO: check if the provided algorithm is a supported one
+            }
+        }
+
+        return true;
     }
 
     @Override
